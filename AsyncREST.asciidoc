@@ -60,13 +60,15 @@ so that you could change this setting without recompiling). We might choose to
 limit the size of the thread pool to prevent overloading the back-end resource,
 a database in this case.
 
-Next, notice that the `getSomethingFromDB` resource method doesn't actually
-return anything. Instead it creates a runnable (via lambda) that makes a
-database call and then returns the result to the client via the `AsyncResponse`
-object. This means that the thread invoking the `getSomethingFromDB` method can
-return immediately to handle future requests. The client won't see a response,
-however, until the call to the DBService completes - which might take a little
-while. This example is essentially throttling access to the database.
+Next, notice that the `getReservation` resource method doesn't actually return
+anything. Instead it creates a new `Reservation` in a runnable (via lambda) that
+makes a database call and then returns the reservation to the client via the
+`AsyncResponse` object. This means that the thread invoking the `getReservation`
+method can return immediately to handle new requests. The client won't see a
+response, however, until the call to the `Reservation` has been constructed and
+passed to the `resume` method - which might take a little while depending on how
+long the database request might take (`DBHelper...`). This example is
+essentially throttling access to the database.
 
 Let's suppose that the database is running slow for some reason. If we had
 implemented this method synchronously, we might run into a situation where the
