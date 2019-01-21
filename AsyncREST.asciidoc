@@ -55,7 +55,7 @@ public class AirlineService {
 So what does this actually do? First, notice that there is a fixed thread pool -
 limited to 10 threads (this is for simplicity - a better practice would be to
 make the thread pool size configurable via
-https://microprofile.io/project/eclipse/microprofile-config(MicroProfile Config)
+https://microprofile.io/project/eclipse/microprofile-config[MicroProfile Config]
 so that you could change this setting without recompiling). We might choose to
 limit the size of the thread pool to prevent overloading the back-end resource,
 a database in this case.
@@ -416,7 +416,7 @@ reservation. The problem is that if the `ClientRequestFilter` checks the
 won't be there - it was associated with the calling thread, not the async
 thread. This picture might help clarify the problem.
 
-image::img/thread-local-problem.png
+image::img/thread-local-problem.png[]
 
 Notice that the Loyalty ID is set on the calling thread, but that ID isn't
 propagated to the async threads that are making the requests to the remote
@@ -428,7 +428,7 @@ Client 1.2 for removing contexts): `prepareContext()` and `applyContext()`. The
 former is invoked on the calling thread prior to "swapping" threads. The latter
 is invoked on the async thread.
 
-image::img/thread-local-solution.png
+image::img/thread-local-solution.png[]
 
 The `AsyncInvocationInterceptor` must be created via a
 `AsyncInvocationInterceptorFactory` like so:
@@ -460,7 +460,7 @@ public class LoyaltyAsyncInvocationInterceptorFactory
 Let's assume that loyalty members get a 10% discount when booking hotels online.
 Now let's try invoking our travel planning site with a loyalty ID:
 
-image::img/curl-output.png
+image::img/curl-output.png[]
 
 With MP Rest Client we can get our loyalty discount and save about $200!
 
