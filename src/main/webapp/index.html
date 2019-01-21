@@ -1,0 +1,82 @@
+<!-- Copyright (c) 2019 IBM Corporation and others.
+  All rights reserved. This program and the accompanying materials
+  are made available under the terms of the Eclipse Public License v1.0
+  which accompanies this distribution, and is available at
+  http://www.eclipse.org/legal/epl-v10.html
+ 
+  Contributors:
+  IBM Corporation - initial API and implementation
+-->
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>SSE Chat on Open Liberty</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+  <script type="text/javascript">
+	$(document).ready(function() {
+		$('#submit').click(function() {
+			console.log("click");
+			var user = $('#user').val();
+			var msg = $('#msg').val();
+
+			$.ajax({
+				url : '/SseChatSample/sse/chat?user=' + user + '&message=' + msg, 
+				type : 'PUT',
+				success : function() {
+					return false;
+				}
+			});
+			
+			document.getElementById("msg").value = "";
+
+		});
+		$('#msg').keypress(function(e) {
+			if (e.keyCode == '13') {	
+				console.log("enter");
+				var user = $('#user').val();
+				var msg = $('#msg').val();
+
+				$.ajax({
+					url : '/SseChatSample/sse/chat?user=' + user + '&message=' + msg,
+					type : 'PUT',
+					success : function() {
+						return false;
+					}
+				});
+			
+				document.getElementById("msg").value = "";
+			}
+		});
+		
+	});
+	
+  </script>
+</head>
+<body>
+  <div>SSE Chat:</div>
+  <table id="p1" style="width:95%">
+    <tr><th style="width:10%; text-align:left">User:</th>
+    <th style="width:10%; text-align:left">Time:</th>
+    <th style="text-align:left">Message:</th>
+  </tr></table>
+  <script>
+    var source = new EventSource('sse/chat/register');
+    
+    source.onmessage = function(e) {
+    	console.log("event: " + e + "  data: " + e.data);
+    	var chatMsg = JSON.parse(e.data);
+        document.getElementById("p1").innerHTML += '<tr><td>' + chatMsg.user + '</td><td>' + chatMsg.timestamp + '</td><td>' + chatMsg.message + '</td></tr>';
+      };
+  </script>
+  <div>
+    <form onsubmit="return false;">
+      User: <input id="user" type="text" name="user" value=""/>
+      Send: <input id="msg" type="text" name="data" value=""/>
+      <input id="submit" type="button" value="Send"/>
+    </form>
+  </div>
+</body>
+</html>
+
