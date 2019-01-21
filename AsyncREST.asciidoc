@@ -11,11 +11,12 @@ Andy McCright <https://github.com/andymc12>
 
 JAX-RS and MicroProfile Rest Client make writing and consuming RESTful services
 both easy and powerful. Leveraging their asynchronous capabilities can be even
-more powerful. Let's see how.  We'll follow a sample I created at:
+more powerful. Let's see how.  We'll follow a sample travel planning service at:
 https://github.com/OpenLiberty/sample-async-rest
 
-It is a travel planning application that makes RESTful calls to an airline
-service, hotel service, and car rental service.
+The application makes RESTful calls to an airline service, hotel service, and
+car rental service in order to make reservations and determine the total cost of
+the trip.
 
 == Async on the server (JAX-RS 2.0 and 2.1)
 
@@ -29,6 +30,8 @@ would return `void` since the actual response would be returned via the
 @Path("/airline")
 public class AirlineService {
 
+    private static ExecutorService executor = Executors.newFixedThreadPool(10);
+
     @Path("/cost")
     @GET
     public void getReservation(@QueryParam("from") String from,
@@ -37,7 +40,7 @@ public class AirlineService {
                                @QueryParam("end") LocalDate end,
                                @Suspended AsyncResponse ar) {
 
-        App.executorService().execute( () -> {
+        executor.execute( () -> {
             Reservation r = new Reservation();
             r.setDestination(to);
             r.setInitialLocation(from);
@@ -192,10 +195,10 @@ instance of the callback to asynchronously invoke three different services.
 We'll only end up waiting for as long as the longest of those three services.
 Very efficient!
 
-Note that in a failure case we log the exception and then propagate it back to
-the client.  Also note that we are caching and re-using the `WebTarget` for
+Note: In a failure case we log the exception and then propagate it back to
+the client.  Also, we are caching and re-using the `WebTarget` for
 each remote service. This avoids a lot of object creation in the JAX-RS
-implementation code, and improves overall performance.
+implementation code, improving overall performance.
 
 This works well, but JAX-RS 2.1 gives us another option - a reactive client API.
 
@@ -212,7 +215,7 @@ post that will provide more information on reactive extensions. Stay tuned!
 Similar to the `async()` method in JAX-RS 2.0 (which is still available in 2.1),
 we get an instance of a `CompletionStageRxInvoker` by using the `rx()` method on
 the `Invocation.Builder`. The `CompletionStageRxInvoker` has methods similar to
-the `AsyncInvoker`, but returns `CompletionStage` rather than `Future` - also
+the `AsyncInvoker`, but returns `CompletionStage` rather than `Future`. Also
 note that these methods do not take an `InvocationCallback` either.
 
 So, if we were to re-write the JAX-RS 2.0 client example using the reactive
@@ -298,8 +301,8 @@ from the JAX-RS 2.0 async client, but I think the reactive example is cleaner
 and easier to understand. And less code to maintain is also nice!
 
 Speaking of less code... hopefully by now you've heard about the MicroProfile
-Rest Client. It is a proxy-based, type safe client API for RESTful services, and
-starting in MP Rest Client 1.1, you can make asynchronous calls using Java 8's
+Rest Client. It is a proxy-based, type safe client API for RESTful services.
+Starting in MP Rest Client 1.1, you can make asynchronous calls using Java 8's
 `CompletionStage`. Let's check out that approach:
 
 == Async in MicroProfile Rest Client
@@ -310,16 +313,16 @@ type-safe approach where an interface, annotated similar to a JAX-RS resource,
 represents a remote service. Invoking methods on the client interface would be
 similar to invoking methods on a service hosted locally - with clever usage of
 providers like `ResponseExceptionMapper`, `ParamConverterProvider`,
-`MessageBodyReader`, `MessageBodyWriter`, etc. it is possible to design a
+`MessageBodyReader`, `MessageBodyWriter`, etc. which allows us to design a
 service interface that indeed acts like it is local.
 
 In order for a Rest Client method to be executed asynchronously, it must return
-a `CompletionStage`. Note, in MP Rest Client 1.2, it is also possible to use MP
-Fault Tolerance's `@Asynchronous` annotation - this is outside the scope of this
-post, but the jist is that if your interface method returns a `Future`, then the
-MP Fault Tolerance implementation will invoke the method on a separate thread,
-immediately returning a `Future`. You can find more information about the Fault
-Tolerance APIs at the
+a `CompletionStage`. Note that in MP Rest Client 1.2, it is also possible to use
+MP Fault Tolerance's `@Asynchronous` annotation. This functionality is outside
+the scope of this post, but the jist is that if your interface method returns a
+`Future`, then the MP Fault Tolerance implementation will invoke the method on a
+separate thread, immediately returning a `Future`. You can find more information
+about the Fault Tolerance APIs at the
 https://microprofile.io/project/eclipse/microprofile-fault-tolerance[project site].
 
 So in our travel planning example, you might want to create client interfaces
